@@ -1,13 +1,11 @@
 pipeline {
     agent any
 
-    stages {
+    environment {
+        DOCKER_IMAGE = "arundevops0047/node-ci-pipeline"
+    }
 
-        stage('Clone') {
-            steps {
-                echo 'Cloning Repository...'
-            }
-        }
+    stages {
 
         stage('Install Dependencies') {
             steps {
@@ -17,13 +15,25 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t node-ci-demo .'
+                bat "docker build -t %DOCKER_IMAGE% ."
             }
         }
 
-        stage('List Docker Images') {
+        stage('Docker Login') {
             steps {
-                bat 'docker images'
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    bat "docker login -u %DOCKER_USER% -p %DOCKER_PASS%"
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                bat "docker push %DOCKER_IMAGE%"
             }
         }
     }
